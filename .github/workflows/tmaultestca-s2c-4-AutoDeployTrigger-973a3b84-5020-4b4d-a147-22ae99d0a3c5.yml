@@ -1,0 +1,45 @@
+name: Trigger auto deployment for tmaultestca-s2c-4
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/tmaultestca-s2c-4-AutoDeployTrigger-973a3b84-5020-4b4d-a147-22ae99d0a3c5.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.TMAULTESTCAS2C4_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.TMAULTESTCAS2C4_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.TMAULTESTCAS2C4_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: tmregtest.azurecr.io
+          registryUsername: ${{ secrets.TMAULTESTCAS2C4_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.TMAULTESTCAS2C4_REGISTRY_PASSWORD }}
+          containerAppName: tmaultestca-s2c-4
+          resourceGroup: tmauldin-test
+          imageToBuild: tmregtest.azurecr.io/tmaultestca-s2c-4:${{ github.sha }}
+          
+
+

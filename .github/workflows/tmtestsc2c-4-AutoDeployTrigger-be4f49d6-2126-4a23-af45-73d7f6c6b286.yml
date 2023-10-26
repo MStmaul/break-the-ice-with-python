@@ -1,0 +1,45 @@
+name: Trigger auto deployment for tmtestsc2c-4
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/tmtestsc2c-4-AutoDeployTrigger-be4f49d6-2126-4a23-af45-73d7f6c6b286.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.TMTESTSC2C4_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.TMTESTSC2C4_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.TMTESTSC2C4_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: tmregtest.azurecr.io
+          registryUsername: ${{ secrets.TMTESTSC2C4_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.TMTESTSC2C4_REGISTRY_PASSWORD }}
+          containerAppName: tmtestsc2c-4
+          resourceGroup: tmauldin-test
+          imageToBuild: tmregtest.azurecr.io/tmtestsc2c-4:${{ github.sha }}
+          
+
+
